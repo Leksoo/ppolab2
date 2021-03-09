@@ -13,7 +13,8 @@ object CatalogServer {
     private const val MONGO_HOST = "mongodb://localhost:27017"
     private val catalogDriver: CatalogDriver = CatalogMongoDriver(MONGO_HOST)
 
-    private const val PARAM_ID = "id"
+    private const val PARAM_USER_ID = "uid"
+    private const val PARAM_PRODUCT_ID = "pid"
     private const val PARAM_CURRENCY = "currency"
     private const val PARAM_NAME = "name"
     private const val PARAM_COST = "cost"
@@ -32,19 +33,37 @@ object CatalogServer {
             "get-user" -> {
                 handleGetUSer(params)
             }
+            "get-product" -> {
+                handleGetProduct(params)
+            }
             else -> {
                 null
             }
         }
     }
 
+    private fun handleGetProduct(params: Map<String, MutableList<String>>): Observable<String>? {
+        val userId = params[PARAM_USER_ID]?.get(0)?.toInt() ?: return null
+        val productId = params[PARAM_PRODUCT_ID]?.get(0)?.toInt() ?: return null
+        val currencyObs = catalogDriver.getUser(userId).map { it.currency }
+        return currencyObs.flatMap { currency ->
+            catalogDriver.getProduct(productId).map {
+                Product(
+                    it.id,
+                    it.name,
+                    Currency.convert(it.cost, Currency.USD, currency)
+                )
+            }.map { it.toString() }
+        }
+    }
+
     private fun handleGetUSer(params: Map<String, MutableList<String>>): Observable<String>? {
-        val userId = params[PARAM_ID]?.get(0)?.toInt() ?: return null
+        val userId = params[PARAM_USER_ID]?.get(0)?.toInt() ?: return null
         return catalogDriver.getUser(userId).map { it.toString() }
     }
 
     private fun handleAddProduct(params: Map<String, MutableList<String>>): Observable<String>? {
-        val productId = params[PARAM_ID]?.get(0)?.toInt() ?: return null
+        val productId = params[PARAM_PRODUCT_ID]?.get(0)?.toInt() ?: return null
         val productName = params[PARAM_NAME]?.get(0) ?: return null
         val currency = params[PARAM_CURRENCY]?.get(0)?.let {
             Currency.valueOf(it)
@@ -57,7 +76,7 @@ object CatalogServer {
     }
 
     private fun handleGetProducts(params: Map<String, MutableList<String>>): Observable<String>? {
-        val userId = params[PARAM_ID]?.get(0)?.toInt() ?: return null
+        val userId = params[PARAM_USER_ID]?.get(0)?.toInt() ?: return null
         val currencyObs = catalogDriver.getUser(userId).map { it.currency }
         val productsObs = catalogDriver.getProducts()
         return currencyObs.flatMap { currency ->
@@ -72,7 +91,7 @@ object CatalogServer {
     }
 
     private fun handleSignUp(params: Map<String, MutableList<String>>): Observable<String>? {
-        val userId = params[PARAM_ID]?.get(0)?.toInt() ?: return null
+        val userId = params[PARAM_USER_ID]?.get(0)?.toInt() ?: return null
         val userName = params[PARAM_NAME]?.get(0) ?: return null
         val userCurrency = params[PARAM_CURRENCY]?.get(0)?.let {
             Currency.valueOf(it)

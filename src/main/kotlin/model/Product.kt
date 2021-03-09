@@ -18,7 +18,7 @@ data class Product(
     override fun toString(): String {
         return "Product{" +
                 "id=" + id +
-                "name=" + name +
+                ", name=" + name +
                 ", cost='" + cost + '\'' +
                 '}'
     }

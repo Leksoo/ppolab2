@@ -22,11 +22,19 @@ class CatalogMongoDriver(
     }
 
     override fun getUser(id: Int): Observable<User> {
-        return userCollection.find(eq(User.ID_FIELD, id)).toObservable().map { doc -> User.fromDocument(doc) }
+        return userCollection.find(
+            eq(User.ID_FIELD, id)
+        ).toObservable().map { doc -> User.fromDocument(doc) }
     }
 
     override fun addProduct(product: Product): Observable<Success> {
         return productCollection.insertOne(product.asDocument())
+    }
+
+    override fun getProduct(id: Int): Observable<Product> {
+        return productCollection.find(
+            eq(Product.ID_FIELD, id)
+        ).toObservable().map { doc -> Product.fromDocument(doc) }
     }
 
     override fun getProducts(): Observable<Product> {
