@@ -9,7 +9,10 @@ data class User(
 ) {
 
     fun asDocument(): Document {
-        return Document().append("id", id).append("name", name).append("currency", currency.name)
+        return Document()
+            .append(ID_FIELD, id)
+            .append(NAME_FIELD, name)
+            .append(CURRENCY_FIELD, currency.name)
     }
 
     override fun toString(): String {
@@ -23,9 +26,13 @@ data class User(
 
     companion object {
         fun fromDocument(doc: Document) = User(
-            doc.getInteger("id"),
-            doc.getString("name"),
-            Currency.valueOf(doc.getString("currency"))
+            doc.getInteger(ID_FIELD),
+            doc.getString(NAME_FIELD),
+            Currency.valueOf(doc.getString(CURRENCY_FIELD))
         )
+
+        const val ID_FIELD = "id"
+        const val NAME_FIELD = "name"
+        const val CURRENCY_FIELD = "currency"
     }
 }

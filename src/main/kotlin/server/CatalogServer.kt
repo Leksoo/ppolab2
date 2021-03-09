@@ -44,6 +44,7 @@ object CatalogServer {
     }
 
     private fun handleAddProduct(params: Map<String, MutableList<String>>): Observable<String>? {
+        val productId = params[PARAM_ID]?.get(0)?.toInt() ?: return null
         val productName = params[PARAM_NAME]?.get(0) ?: return null
         val currency = params[PARAM_CURRENCY]?.get(0)?.let {
             Currency.valueOf(it)
@@ -52,7 +53,7 @@ object CatalogServer {
             Currency.convert(it, currency, Currency.USD)
         } ?: return null
 
-        return catalogDriver.addProduct(Product(productName, productCost)).map { it.toString() }
+        return catalogDriver.addProduct(Product(productId, productName, productCost)).map { it.toString() }
     }
 
     private fun handleGetProducts(params: Map<String, MutableList<String>>): Observable<String>? {
@@ -62,6 +63,7 @@ object CatalogServer {
         return currencyObs.flatMap { currency ->
             productsObs.map {
                 Product(
+                    it.id,
                     it.name,
                     Currency.convert(it.cost, Currency.USD, currency)
                 )
