@@ -8,6 +8,7 @@ import model.Currency
 import model.Product
 import model.User
 import rx.Observable
+import java.lang.IllegalArgumentException
 
 object CatalogServer {
     private const val MONGO_HOST = "mongodb://localhost:27017"
@@ -37,7 +38,7 @@ object CatalogServer {
                 handleGetProduct(params)
             }
             else -> {
-                null
+                throw IllegalArgumentException("unknown request url path")
             }
         }
     }
