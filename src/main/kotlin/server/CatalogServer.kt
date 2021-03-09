@@ -1,24 +1,34 @@
 package server
 
 import database.CatalogDriver
-import database.CatalogMongoDriver
 import io.netty.handler.codec.http.HttpResponseStatus
 import io.reactivex.netty.protocol.http.server.HttpServer
 import model.Currency
 import model.Product
 import model.User
 import rx.Observable
-import java.lang.IllegalArgumentException
 
-object CatalogServer {
-    private const val MONGO_HOST = "mongodb://localhost:27017"
-    private val catalogDriver: CatalogDriver = CatalogMongoDriver(MONGO_HOST)
+class CatalogServer(
+    private val catalogDriver: CatalogDriver
+) {
 
-    private const val PARAM_USER_ID = "uid"
-    private const val PARAM_PRODUCT_ID = "pid"
-    private const val PARAM_CURRENCY = "currency"
-    private const val PARAM_NAME = "name"
-    private const val PARAM_COST = "cost"
+    fun start() {
+        HttpServer
+            .newServer(8080)
+            .start { req, resp ->
+                val name = req.decodedPath.substring(1)
+                val response = try {
+                    handleRequest(name, req.queryParameters) ?: run {
+                        resp.status = HttpResponseStatus.BAD_REQUEST
+                        Observable.just("bad request, query parameter is not specified")
+                    }
+                } catch (e: Exception) {
+                    resp.status = HttpResponseStatus.BAD_REQUEST
+                    Observable.just("error occurred while processing request\n${e.message}")
+                }
+                resp.writeString(response)
+            }.awaitShutdown()
+    }
 
     private fun handleRequest(name: String, params: Map<String, MutableList<String>>): Observable<String>? {
         return when (name) {
@@ -101,23 +111,12 @@ object CatalogServer {
         return catalogDriver.addUser(User(userId, userName, userCurrency)).map { it.toString() }
     }
 
-    @JvmStatic
-    fun main(args: Array<String>) {
-        HttpServer
-            .newServer(8080)
-            .start { req, resp ->
-                val name = req.decodedPath.substring(1)
-                val response = try {
-                    handleRequest(name, req.queryParameters) ?: run {
-                        resp.status = HttpResponseStatus.BAD_REQUEST
-                        Observable.just("bad request, query parameter is not specified")
-                    }
-                } catch (e: Exception) {
-                    resp.status = HttpResponseStatus.BAD_REQUEST
-                    Observable.just("error occurred while processing request\n${e.message}")
-                }
-                resp.writeString(response)
-            }.awaitShutdown()
+    companion object {
+        private const val PARAM_USER_ID = "uid"
+        private const val PARAM_PRODUCT_ID = "pid"
+        private const val PARAM_CURRENCY = "currency"
+        private const val PARAM_NAME = "name"
+        private const val PARAM_COST = "cost"
     }
 }
 
